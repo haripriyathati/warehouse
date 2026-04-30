@@ -83,7 +83,7 @@ export default function FindWarehouse() {
     .sort((a, b) => a.distance - b.distance);
 
   return (
-    <div>
+    <div className="main-container">
       <section className="page active">
         <h2>🔍 Find Warehouse</h2>
 

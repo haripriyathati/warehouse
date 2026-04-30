@@ -1,0 +1,167 @@
+/* ================= GLOBAL SPACING ================= */
+body {
+  padding: 20px;
+}
+
+/* ================= NAVBAR ================= */
+.top-nav {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 15px 0 25px;
+  flex-wrap: wrap;
+}
+
+/* NAV ITEMS */
+.top-nav a {
+  padding: 8px 16px;
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+
+  border: 1px solid rgba(255,255,255,0.4);
+  color: #0F766E;
+  font-size: 14px;
+  font-weight: 500;
+
+  box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+  transition: all 0.25s ease;
+}
+
+/* REMOVE underline */
+.top-nav a::after {
+  content: none !important;
+}
+
+/* HOVER */
+.top-nav a:hover {
+  transform: translateY(-3px) scale(1.03);
+  background: linear-gradient(135deg, #CCFBF1, #E6FFFA);
+  box-shadow: 0 10px 25px rgba(20, 184, 166, 0.25);
+}
+
+/* ACTIVE */
+.top-nav a.active {
+  background: linear-gradient(135deg, #0F766E, #14B8A6);
+  color: white;
+}
+
+/* ================= HEADER ================= */
+h1, h2 {
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* ================= MAIN CARD ================= */
+.main-container {
+  max-width: 700px;
+  margin: auto;
+
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(15px);
+
+  padding: 25px;
+  border-radius: 20px;
+
+  box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+
+  animation: floatUp 0.6s ease;
+}
+
+/* ================= INPUTS ================= */
+input, textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+
+  margin-bottom: 12px;
+  background: white;
+  font-size: 14px;
+
+  transition: all 0.25s ease;
+}
+
+/* FOCUS */
+input:focus, textarea:focus {
+  border-color: #14B8A6;
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15);
+  transform: scale(1.01);
+}
+
+/* ================= BUTTONS ================= */
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* PRIMARY BUTTON */
+button:last-of-type {
+  width: 100%;
+  background: linear-gradient(135deg, #0F766E, #14B8A6);
+  color: white;
+
+  box-shadow: 0 6px 20px rgba(20, 184, 166, 0.3);
+}
+
+/* HOVER */
+button:last-of-type:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(20, 184, 166, 0.4);
+}
+
+/* SECONDARY BUTTON */
+button:not(:last-of-type) {
+  background: #E6FFFA;
+  color: #0F766E;
+}
+
+/* ================= RESULT SECTION ================= */
+.results {
+  text-align: center;
+  margin-top: 20px;
+  color: #64748B;
+}
+
+/* ================= ANIMATION ================= */
+@keyframes floatUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* ===== MAIN GLASS CONTAINER ===== */
+.main-container {
+  max-width: 700px;
+  margin: 20px auto;
+
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px);
+
+  padding: 25px;
+  border-radius: 20px;
+
+  box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+
+  position: relative;
+}
+
+/* GLOW EFFECT */
+.main-container::before {
+  content: "";
+  position: absolute;
+  inset: -20px;
+  border-radius: 25px;
+  background: radial-gradient(circle, rgba(20,184,166,0.25), transparent 70%);
+  z-index: -1;
+}
