@@ -13,25 +13,19 @@ import ListSpace from "./pages/ListSpace";
 import Login from "./pages/Login";
 import EcomBookings from "./pages/EcomBookings";
 import EcomDashboard from "./pages/EcomDashboard";
-import ProtectedRoute from "./components/ProtectedRoute"
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   const [user, setUser] = useState(null);
-
-  // 🔁 Sync from localStorage ONCE
-  useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user") || "null");
-    setUser(storedUser);
-  }, []);
-
   const [loading, setLoading] = useState(true);
 
+  // ✅ Single clean sync
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user") || "null");
     setUser(storedUser);
     setLoading(false);
   }, []);
-  
+
   if (loading) return <p>Loading...</p>;
 
   return (
@@ -45,7 +39,7 @@ function App() {
           {/* LOGIN */}
           <Route path="/login" element={<Login setUser={setUser} />} />
 
-          {/* ROLE BASED DHASHBOARD */}
+          {/* ROLE BASED DASHBOARD */}
           <Route
             path="/"
             element={
@@ -59,6 +53,7 @@ function App() {
             }
           />
 
+          {/* KIRANA */}
           <Route
             path="/my-spaces"
             element={
@@ -119,7 +114,7 @@ function App() {
             path="*"
             element={
               user ? (
-                <Navigate to={user.role === "kirana" ? "/" : "/find"} />
+                <Navigate to={user.role === "kirana" ? "/" : "/"} />
               ) : (
                 <Navigate to="/login" />
               )
