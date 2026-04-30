@@ -28,6 +28,10 @@ const listingSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  images: {
+    type: [String],
+    default: []
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model("Listing", listingSchema);

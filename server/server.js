@@ -10,7 +10,9 @@ const bookingRoutes = require("./routes/bookingRoutes");
 const app = express();
 
 // middleware
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173"
+}));
 app.use(express.json());
 app.use("/api/users", userRoutes);
 app.use("/api/listings", listingRoutes);
@@ -27,6 +29,10 @@ mongoose.connect(process.env.MONGO_URI, {
 // test route
 app.get("/", (req, res) => {
   res.send("API is running...");
+});
+//test 
+app.get("/api/test", (req, res) => {
+  res.json({ message: "Backend working ✅" });
 });
 
 // server

@@ -16,7 +16,7 @@ router.post("/create", async (req, res) => {
 
     // calculate total price
     const days =
-      (new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24);
+      Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24));
 
     if (days <= 0) {
         return res.status(400).json({ message: "Invalid date range" });
@@ -55,5 +55,42 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+
+router.get("/owner/:ownerId", async (req, res) => {
+  try {
+    const listings = await Listing.find({ owner: req.params.ownerId });
+
+    const listingIds = listings.map((l) => l._id);
+
+    const bookings = await Booking.find({
+      listing: { $in: listingIds },
+    })
+      .populate("user", "name email")
+      .populate("listing", "title");
+
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+router.put("/:id", async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    res.json(booking);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 module.exports = router;

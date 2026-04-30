@@ -5,7 +5,7 @@ const Listing = require("../models/Listing");
 // CREATE LISTING
 router.post("/create", async (req, res) => {
   try {
-    const { owner, title, location, capacity, price, description } = req.body;
+    const { owner, title, location, capacity, price, description, images} = req.body;
 
     const listing = new Listing({
       owner,
@@ -14,6 +14,7 @@ router.post("/create", async (req, res) => {
       capacity,
       price,
       description,
+      images,
     });
 
     await listing.save();
@@ -30,7 +31,15 @@ router.post("/create", async (req, res) => {
 // GET ALL LISTINGS
 router.get("/", async (req, res) => {
   try {
-    const listings = await Listing.find().populate("owner", "name email");
+    let query = {};
+
+    // ✅ filter by owner if provided
+    if (req.query.owner) {
+      query.owner = req.query.owner;
+    }
+
+    const listings = await Listing.find(query);
+
     res.json(listings);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -76,6 +85,32 @@ router.get("/search", async (req, res) => {
     }
 
     res.json(listings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE LISTING
+router.delete("/:id", async (req, res) => {
+  try {
+    await Listing.findByIdAndDelete(req.params.id);
+    res.json({ message: "Listing deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// UPDATE LISTING
+router.put("/:id", async (req, res) => {
+  try {
+    const updated = await Listing.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
