@@ -93,3 +93,10 @@ export const updateBooking = async (id, status) => {
   });
   return res.json();
 };
+
+export const getUserBookings = async (userId) => {
+  const res = await fetch(
+    `http://localhost:5000/api/bookings/user/${userId}`
+  );
+  return res.json();
+};

@@ -1,11 +1,24 @@
-export default function Topbar() {
+import { useNavigate } from "react-router-dom";
+
+export default function Topbar({ user, setUser }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.clear();
+    setUser(null); // 🔥 instant UI update
+    navigate("/login");
+  };
+
   return (
     <div className="topbar">
-      <div className="topbar-title">MicroWarehouse Dashboard</div>
+      <h3>MicroWarehouse Dashboard</h3>
 
-      <div className="topbar-actions">
-        <button className="btn btn-ghost">⟳ Sync</button>
-        <button className="btn btn-primary">+ List Space</button>
+      <div>
+        <span style={{ marginRight: "10px" }}>
+          👤 {user?.name || user?.email} ({user?.role})
+        </span>
+
+        <button onClick={handleLogout}>🚪 Logout</button>
       </div>
     </div>
   );

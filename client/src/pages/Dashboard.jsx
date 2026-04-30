@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import StatsCard from "../components/StatsCard";
 import { getOwnerListings, getOwnerBookings } from "../services/api";
+import {BarChart,Bar,XAxis,YAxis,Tooltip,ResponsiveContainer,} from "recharts";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -9,6 +10,12 @@ export default function Dashboard() {
     pending: 0,
     accepted: 0,
   });
+
+  const chartData = [
+    { name: "Pending", value: stats.pending },
+    { name: "Accepted", value: stats.accepted },
+  ];
+
 
   const [recentBookings, setRecentBookings] = useState([]);
 
@@ -78,7 +85,19 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+      <div className="card" style={{ marginTop: "20px" }}>
+        <h3>📊 Booking Overview</h3>
 
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={chartData}>
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="value" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </section>
+    
   );
 }

@@ -92,5 +92,18 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// GET BOOKINGS FOR ECOM USER
+router.get("/user/:userId", async (req, res) => {
+  try {
+    const bookings = await Booking.find({ user: req.params.userId })
+      .populate("listing", "title price")
+      .populate("user", "name");
+
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 module.exports = router;
