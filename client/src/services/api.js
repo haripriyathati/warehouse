@@ -100,3 +100,27 @@ export const getUserBookings = async (userId) => {
   );
   return res.json();
 };
+
+export const confirmBooking = async (id) => {
+  const res = await fetch(`http://localhost:5000/api/bookings/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      status: "confirmed",
+      agreementAccepted: true,
+    }),
+  });
+  return res.json();
+};
+
+export const markPaid = async (id) => {
+  const res = await fetch(`http://localhost:5000/api/bookings/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      paymentStatus: "paid",
+      status: "completed",
+    }),
+  });
+  return res.json();
+};

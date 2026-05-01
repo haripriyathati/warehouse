@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getOwnerBookings, updateBooking } from "../services/api";
+import { getOwnerBookings, updateBooking , markPaid} from "../services/api";
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([]);
@@ -42,6 +42,15 @@ export default function MyBookings() {
 
               <button onClick={() => handleUpdate(b._id, "rejected")}>
                 ❌ Reject
+              </button>
+            </>
+          )}
+          {b.status === "confirmed" && (
+            <>
+              <p>💰 Payment Pending</p>
+                    
+              <button onClick={() => markPaid(b._id)}>
+                💳 Mark as Paid
               </button>
             </>
           )}

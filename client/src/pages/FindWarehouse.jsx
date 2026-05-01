@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { searchListings, createBooking } from "../services/api";
+import { useState, useEffect } from "react";
+import {
+  searchListings,
+  createBooking,
+  getUserBookings,
+} from "../services/api";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 
 // 📏 Distance calculator
@@ -11,8 +15,8 @@ function getDistance(lat1, lng1, lat2, lng2) {
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1 * Math.PI / 180) *
-    Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) ** 2;
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) ** 2;
 
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
@@ -25,32 +29,43 @@ export default function FindWarehouse() {
 
   const [results, setResults] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
+  const [userBookings, setUserBookings] = useState([]);
 
   const user = JSON.parse(localStorage.getItem("user") || "null");
 
+  // 🔁 Fetch user bookings
+  useEffect(() => {
+    async function fetchBookings() {
+      if (user?._id) {
+        const data = await getUserBookings(user._id);
+        setUserBookings(data);
+      }
+    }
+    fetchBookings();
+  }, []);
+
+  // 🔍 Find booking for listing
+  const getBookingForListing = (listingId) => {
+    return userBookings.find((b) => b.listing?._id === listingId);
+  };
+
   // 🔍 SEARCH
   const handleSearch = async () => {
-  try {
-    const data = await searchListings({
-      minPrice: minPrice ? Number(minPrice) : undefined,
-      maxPrice: maxPrice ? Number(maxPrice) : undefined,
-      minCapacity: minCapacity ? Number(minCapacity) : undefined,
-      lat: userLocation?.lat,
-      lng: userLocation?.lng,
-    });
+    try {
+      const data = await searchListings({
+        minPrice: minPrice ? Number(minPrice) : undefined,
+        maxPrice: maxPrice ? Number(maxPrice) : undefined,
+        minCapacity: minCapacity ? Number(minCapacity) : undefined,
+        lat: userLocation?.lat,
+        lng: userLocation?.lng,
+      });
 
-    // ✅ Ensure array
-    if (Array.isArray(data)) {
-      setResults(data);
-    } else {
-      console.error("API ERROR:", data);
+      setResults(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
       setResults([]);
     }
-  } catch (err) {
-    console.error("FETCH ERROR:", err);
-    setResults([]);
-  }
-};
+  };
 
   // 📍 GET LOCATION
   const getLocation = () => {
@@ -125,44 +140,99 @@ export default function FindWarehouse() {
         ) : null}
 
         {/* 📦 LISTINGS */}
-        {processedResults.map((item, index) => (
-          <div key={item._id} className="card">
+        {processedResults.map((item, index) => {
+          const booking = getBookingForListing(item._id);
 
-            {index === 0 && (
-              <p style={{ color: "green", fontWeight: "bold" }}>
-                ⭐ Best Match
-              </p>
-            )}
+          return (
+            <div key={item._id} className="card">
+              {index === 0 && (
+                <p style={{ color: "green", fontWeight: "bold" }}>
+                  ⭐ Best Match
+                </p>
+              )}
 
-            <h3>{item.title}</h3>
-            <p>₹{item.price}</p>
-            <p>Capacity: {item.capacity}</p>
-            <p>📍 {item.distance.toFixed(2)} km away</p>
+              <h3>{item.title}</h3>
+              <p>₹{item.price}</p>
+              <p>Capacity: {item.capacity}</p>
+              <p>📍 {item.distance.toFixed(2)} km away</p>
 
-            {/* 📦 BOOKING */}
-            {user && (
-              <button
-                onClick={async () => {
-                  const res = await createBooking(
-                    item._id,
-                    user._id,
-                    "2026-04-25",
-                    "2026-04-28"
-                  );
-                  console.log("BOOKING RESPONSE:", res);
-                }}
-              >
-                📦 Request Booking
-              </button>
-            )}
-            <br></br>``
-            <img
-              src={item.images?.[0]}
-              alt="warehouse"
-              style={{ width: "100%", height: "150px", objectFit: "cover" }}
-            />
-          </div>
-        ))}
+              {/* 📦 BOOKING STATUS LOGIC */}
+
+              {!booking && (
+                <button
+                  onClick={async () => {
+                    await createBooking(
+                      item._id,
+                      user._id,
+                      "2026-04-25",
+                      "2026-04-28"
+                    );
+
+                    const updated = await getUserBookings(user._id);
+                    setUserBookings(updated);
+
+                    alert("Request sent!");
+                  }}
+                >
+                  📦 Request Booking
+                </button>
+              )}
+
+              {booking?.status === "pending" && (
+                <button disabled>⏳ Pending</button>
+              )}
+
+              {booking?.status === "accepted" && (
+                <button disabled style={{ background: "orange" }}>
+                  ✅ Accepted
+                </button>
+              )}
+
+              {booking?.status === "confirmed" && (
+                <button disabled style={{ background: "green" }}>
+                  📦 In Use
+                </button>
+              )}
+
+              {booking?.status === "completed" && (
+                <button disabled>✔ Completed</button>
+              )}
+
+              {booking?.status === "rejected" && (
+                <button
+                  style={{ background: "red" }}
+                  onClick={async () => {
+                    await createBooking(
+                      item._id,
+                      user._id,
+                      "2026-04-25",
+                      "2026-04-28"
+                    );
+
+                    const updated = await getUserBookings(user._id);
+                    setUserBookings(updated);
+                  }}
+                >
+                  🔁 Retry Booking
+                </button>
+              )}
+
+              {/* 🖼️ IMAGE */}
+              {item.images?.[0] && (
+                <img
+                  src={item.images[0]}
+                  alt="warehouse"
+                  style={{
+                    width: "100%",
+                    height: "150px",
+                    objectFit: "cover",
+                    marginTop: "10px",
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
       </section>
 
       {/* 🗺️ MAP */}
