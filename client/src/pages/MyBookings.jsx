@@ -36,6 +36,10 @@ export default function MyBookings() {
 
           {b.status === "pending" && (
             <>
+              <p style={{ color: "red", fontSize: "12px" }}>
+                ⚠️ Contact will be shared with the user after acceptance
+              </p>
+              
               <button onClick={() => handleUpdate(b._id, "accepted")}>
                 ✅ Accept
               </button>
@@ -49,10 +53,23 @@ export default function MyBookings() {
             <>
               <p>💰 Payment Pending</p>
                     
-              <button onClick={() => markPaid(b._id)}>
+              <button
+                onClick={async () => {
+                  await markPaid(b._id);
+                
+                  // 🔥 refresh bookings
+                  const updated = await getOwnerBookings(user._id);
+                  setBookings(updated);
+                }}
+              >
                 💳 Mark as Paid
               </button>
             </>
+          )}
+          {b.status === "completed" && (
+            <p style={{ color: "green", fontWeight: "bold" }}>
+              ✔ Payment Completed
+            </p>
           )}
         </div>
       ))}

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Booking = require("../models/Bookings");
 const Listing = require("../models/Listing");
+const Transaction =require("../models/Transaction")
 
 // CREATE BOOKING
 router.post("/create", async (req, res) => {
@@ -78,17 +79,45 @@ router.get("/owner/:ownerId", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   try {
-    const { status } = req.body;
+    const booking = await Booking.findById(req.params.id);
 
-    const booking = await Booking.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
+    if (!booking) {
+      return res.status(404).json({
+        message: "Booking not found",
+      });
+    }
+
+    // ✅ update booking fields
+    booking.status = req.body.status;
+
+    if (req.body.agreementAccepted !== undefined) {
+      booking.agreementAccepted = req.body.agreementAccepted;
+    }
+
+    await booking.save();
+
+    // 💰 CREATE TRANSACTION ON CONFIRM
+    if (booking.status === "confirmed") {
+      const existingTx = await Transaction.findOne({
+        booking: booking._id,
+      });
+
+      // avoid duplicate transaction creation
+      if (!existingTx) {
+        await Transaction.create({
+          booking: booking._id,
+          amount: booking.totalPrice,
+          status: "pending",
+        });
+      }
+    }
 
     res.json(booking);
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 
@@ -96,7 +125,13 @@ router.put("/:id", async (req, res) => {
 router.get("/user/:userId", async (req, res) => {
   try {
     const bookings = await Booking.find({ user: req.params.userId })
-      .populate("listing", "title price")
+      .populate({
+        path: "listing",
+        populate: {
+          path: "owner",
+          select: "name phone",
+        },
+      })
       .populate("user", "name");
 
     res.json(bookings);
@@ -105,5 +140,43 @@ router.get("/user/:userId", async (req, res) => {
   }
 });
 
+// 💳 MARK BOOKING AS PAID
+router.put("/:id/pay", async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        message: "Booking not found",
+      });
+    }
+
+    // ✅ update booking
+    booking.status = "completed";
+
+    await booking.save();
+
+    // ✅ update transaction
+    const tx = await Transaction.findOne({
+      booking: booking._id,
+    });
+
+    if (tx) {
+      tx.status = "paid";
+      await tx.save();
+    }
+
+    res.json({
+      message: "Payment completed",
+      booking,
+      transaction: tx,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
 
 module.exports = router;

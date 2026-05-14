@@ -1,7 +1,19 @@
 import { useEffect, useState } from "react";
 import StatsCard from "../components/StatsCard";
-import { getOwnerListings, getOwnerBookings } from "../services/api";
-import {BarChart,Bar,XAxis,YAxis,Tooltip,ResponsiveContainer,} from "recharts";
+import {
+  getOwnerListings,
+  getOwnerBookings,
+} from "../services/api";
+
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -9,17 +21,15 @@ export default function Dashboard() {
     bookings: 0,
     pending: 0,
     accepted: 0,
+    completed: 0,
+    rejected: 0,
   });
-
-  const chartData = [
-    { name: "Pending", value: stats.pending },
-    { name: "Accepted", value: stats.accepted },
-  ];
-
 
   const [recentBookings, setRecentBookings] = useState([]);
 
-  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const user = JSON.parse(
+    localStorage.getItem("user") || "null"
+  );
 
   useEffect(() => {
     async function fetchData() {
@@ -27,7 +37,10 @@ export default function Dashboard() {
         if (!user?._id) return;
 
         const listings = await getOwnerListings(user._id);
-        const bookings = await getOwnerBookings(user._id);
+
+        const bookings = await getOwnerBookings(
+          user._id
+        );
 
         const pending = bookings.filter(
           (b) => b.status === "pending"
@@ -37,15 +50,25 @@ export default function Dashboard() {
           (b) => b.status === "accepted"
         ).length;
 
+        const completed = bookings.filter(
+          (b) => b.status === "completed"
+        ).length;
+
+        const rejected = bookings.filter(
+          (b) => b.status === "rejected"
+        ).length;
+
         setStats({
           listings: listings.length,
           bookings: bookings.length,
           pending,
           accepted,
+          completed,
+          rejected,
         });
 
-        // latest 5 bookings
         setRecentBookings(bookings.slice(0, 5));
+
       } catch (err) {
         console.error("Dashboard error:", err);
       }
@@ -54,50 +77,172 @@ export default function Dashboard() {
     fetchData();
   }, [user]);
 
+  const chartData = [
+    {
+      name: "Pending",
+      value: stats.pending,
+      fill: "#f59e0b",
+    },
+    {
+      name: "Accepted",
+      value: stats.accepted,
+      fill: "#14b8a6",
+    },
+    {
+      name: "Completed",
+      value: stats.completed,
+      fill: "#22c55e",
+    },
+    {
+      name: "Rejected",
+      value: stats.rejected,
+      fill: "#f43f5e",
+    },
+  ];
+
   return (
-    <section className="page active">
-      
-      {/* 📊 STATS */}
-      <div className="stats-grid">
-        <StatsCard label="📦 My Listings" value={stats.listings} />
-        <StatsCard label="📑 Total Bookings" value={stats.bookings} type="info" />
-        <StatsCard label="⏳ Pending Requests" value={stats.pending} type="warning" />
-        <StatsCard label="✅ Accepted Bookings" value={stats.accepted} type="success" />
+    <section className="page dashboard-page">
+
+      {/* PAGE TITLE */}
+      <div className="dashboard-header">
+        <h2>📊 Kirana Dashboard</h2>
+
+        <p>
+          Track bookings, warehouse activity,
+          and business performance
+        </p>
       </div>
 
-      {/* 🔔 RECENT ACTIVITY */}
-      <div className="card">
-        <div className="card-header">
+      {/* STATS */}
+      <div className="stats-grid">
+
+        <StatsCard
+          label="📦 My Listings"
+          value={stats.listings}
+        />
+
+        <StatsCard
+          label="📑 Total Bookings"
+          value={stats.bookings}
+        />
+
+        <StatsCard
+          label="⏳ Pending"
+          value={stats.pending}
+        />
+
+        <StatsCard
+          label="✅ Accepted"
+          value={stats.accepted}
+        />
+
+        <StatsCard
+          label="✔ Completed"
+          value={stats.completed}
+        />
+
+        <StatsCard
+          label="❌ Rejected"
+          value={stats.rejected}
+        />
+      </div>
+
+      {/* CHART */}
+      <div className="card dashboard-chart-card">
+
+        <div className="dashboard-card-header">
+          <h3>📈 Booking Overview</h3>
+        </div>
+
+        <ResponsiveContainer
+          width="100%"
+          height={340}
+        >
+          <BarChart data={chartData}>
+            <XAxis
+              dataKey="name"
+              tick={{
+                fill: "#cbd5e1",
+                fontSize: 14,
+              }}
+              axisLine={false}
+              tickLine={false}
+            />
+
+            <YAxis
+              tick={{
+                fill: "#cbd5e1",
+                fontSize: 14,
+              }}
+              axisLine={false}
+              tickLine={false}
+            />
+
+            <Tooltip
+              contentStyle={{
+                background: "#0f172a",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: "14px",
+                color: "white",
+              }}
+            />
+
+            <Bar
+              dataKey="value"
+              radius={[12, 12, 0, 0]}
+            >
+              {chartData.map((entry, index) => (
+                <Cell
+                  key={index}
+                  fill={entry.fill}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* RECENT ACTIVITY */}
+      <div className="card dashboard-activity-card">
+
+        <div className="dashboard-card-header">
           <h3>🔔 Recent Activity</h3>
         </div>
 
-        <div className="card-body">
+        <div className="activity-list">
+
           {recentBookings.length === 0 ? (
             <p>No recent activity</p>
           ) : (
             recentBookings.map((b) => (
-              <p key={b._id}>
-                📦 {b.user?.name || "User"} requested{" "}
-                <strong>{b.listing?.title}</strong> —{" "}
-                <span style={{ color: "#888" }}>{b.status}</span>
-              </p>
+              <div
+                key={b._id}
+                className="activity-item"
+              >
+                <div>
+                  <p className="activity-text">
+                    📦{" "}
+                    <strong>
+                      {b.user?.name || "User"}
+                    </strong>{" "}
+                    requested{" "}
+                    <strong>
+                      {b.listing?.title}
+                    </strong>
+                  </p>
+                </div>
+
+                <span
+                  className={`status-badge ${b.status}`}
+                >
+                  {b.status}
+                </span>
+              </div>
             ))
           )}
+
         </div>
       </div>
-      <div className="card" style={{ marginTop: "20px" }}>
-        <h3>📊 Booking Overview</h3>
-
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData}>
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="value" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
     </section>
-    
   );
 }

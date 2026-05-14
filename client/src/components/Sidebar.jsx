@@ -4,7 +4,7 @@ export default function Sidebar({ user }){
 
   return (
     <aside className="sidebar">
-      <h2>MicroWH</h2>
+      <h2>QUICKshelf</h2>
 
       {user?.role === "kirana" && (
         <>
@@ -19,7 +19,7 @@ export default function Sidebar({ user }){
         <>
           <Link to="/">📊 Dashboard</Link>
           <Link to="/find">🔍 Find Warehouse</Link>
-          <Link to="/map">🗺️ Map</Link>
+          <Link to="/map">🗺️ Smart Map</Link>
           <Link to="/my-bookings">📑 My Bookings</Link>
         </>
       )}

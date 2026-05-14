@@ -50,16 +50,154 @@ export default function Login({ setUser }) {
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "50px auto" }}>
-      <h2>🔐 Login</h2>
+  <div className="main-container">
+
+    <h2 className="login-title">
+      🔐 Login
+    </h2>
+
+    {/* ROLE SELECT */}
+    <div
+      style={{
+        display: "flex",
+        gap: "20px",
+        marginBottom: "25px",
+      }}
+    >
+
+      {/* KIRANA */}
+      <div
+        onClick={() =>
+          setForm({
+            ...form,
+            role: "kirana",
+          })
+        }
+        style={{
+          flex: 1,
+          padding: "20px",
+          borderRadius: "18px",
+          cursor: "pointer",
+
+          border:
+            form.role === "kirana"
+              ? "2px solid #14B8A6"
+              : "1px solid rgba(255,255,255,0.08)",
+
+          background:
+            form.role === "kirana"
+              ? "rgba(20,184,166,0.15)"
+              : "rgba(255,255,255,0.03)",
+
+          textAlign: "center",
+
+          boxShadow:
+            form.role === "kirana"
+              ? "0 0 30px rgba(20,184,166,0.2)"
+              : "none",
+        }}
+      >
+        <div
+          style={{
+            fontSize: "2.2rem",
+            marginBottom: "10px",
+          }}
+        >
+          🏪
+        </div>
+
+        <h3
+          style={{
+            color: "white",
+            marginBottom: "8px",
+          }}
+        >
+          Kirana Owner
+        </h3>
+
+        <p
+          style={{
+            fontSize: "0.9rem",
+          }}
+        >
+          List and manage warehouse
+          spaces
+        </p>
+      </div>
+
+      {/* ECOM */}
+      <div
+        onClick={() =>
+          setForm({
+            ...form,
+            role: "ecom",
+          })
+        }
+        style={{
+          flex: 1,
+          padding: "20px",
+          borderRadius: "18px",
+          cursor: "pointer",
+
+          border:
+            form.role === "ecom"
+              ? "2px solid #14B8A6"
+              : "1px solid rgba(255,255,255,0.08)",
+
+          background:
+            form.role === "ecom"
+              ? "rgba(20,184,166,0.15)"
+              : "rgba(255,255,255,0.03)",
+
+          textAlign: "center",
+
+          boxShadow:
+            form.role === "ecom"
+              ? "0 0 30px rgba(20,184,166,0.2)"
+              : "none",
+        }}
+      >
+        <div
+          style={{
+            fontSize: "2.2rem",
+            marginBottom: "10px",
+          }}
+        >
+          📦
+        </div>
+
+        <h3
+          style={{
+            color: "white",
+            marginBottom: "8px",
+          }}
+        >
+          E-Commerce
+        </h3>
+
+        <p
+          style={{
+            fontSize: "0.9rem",
+          }}
+        >
+          Find and book warehouse
+          spaces
+        </p>
+      </div>
+    </div>
+
+    {/* LOGIN FORM */}
+    <div className="login-form">
 
       <input
         placeholder="Email"
         value={form.email}
         onChange={(e) =>
-          setForm({ ...form, email: e.target.value })
+          setForm({
+            ...form,
+            email: e.target.value,
+          })
         }
-        style={{ display: "block", marginBottom: "10px", width: "100%" }}
       />
 
       <input
@@ -67,14 +205,20 @@ export default function Login({ setUser }) {
         placeholder="Password"
         value={form.password}
         onChange={(e) =>
-          setForm({ ...form, password: e.target.value })
+          setForm({
+            ...form,
+            password: e.target.value,
+          })
         }
-        style={{ display: "block", marginBottom: "10px", width: "100%" }}
       />
 
-      <button onClick={handleLogin} style={{ width: "100%" }}>
+      <button
+        className="btn-primary"
+        onClick={handleLogin}
+      >
         Login
       </button>
     </div>
-  );
+  </div>
+);
 }

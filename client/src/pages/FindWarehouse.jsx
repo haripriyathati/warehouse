@@ -1,68 +1,166 @@
 import { useState, useEffect } from "react";
+
 import {
   searchListings,
   createBooking,
   getUserBookings,
+  getListingReviews,
 } from "../services/api";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+} from "react-leaflet";
 
 // 📏 Distance calculator
 function getDistance(lat1, lng1, lat2, lng2) {
   const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
+
+  const dLat =
+    ((lat2 - lat1) * Math.PI) / 180;
+
+  const dLng =
+    ((lng2 - lng1) * Math.PI) / 180;
 
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) *
-      Math.cos(lat2 * Math.PI / 180) *
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
       Math.sin(dLng / 2) ** 2;
 
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return (
+    R *
+    2 *
+    Math.atan2(
+      Math.sqrt(a),
+      Math.sqrt(1 - a)
+    )
+  );
 }
 
 export default function FindWarehouse() {
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [minCapacity, setMinCapacity] = useState("");
-  const [radius, setRadius] = useState(50);
+  const [minPrice, setMinPrice] =
+    useState("");
 
-  const [results, setResults] = useState([]);
-  const [userLocation, setUserLocation] = useState(null);
-  const [userBookings, setUserBookings] = useState([]);
+  const [maxPrice, setMaxPrice] =
+    useState("");
 
-  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const [minCapacity, setMinCapacity] =
+    useState("");
+
+  const [radius, setRadius] =
+    useState(50);
+
+  const [ratings, setRatings] =
+    useState({});
+
+  const [demandData, setDemandData] =
+    useState({});
+
+  const [results, setResults] =
+    useState([]);
+
+  const [userLocation, setUserLocation] =
+    useState(null);
+
+  const [userBookings, setUserBookings] =
+    useState([]);
+
+  const user = JSON.parse(
+    localStorage.getItem("user") || "null"
+  );
 
   // 🔁 Fetch user bookings
   useEffect(() => {
     async function fetchBookings() {
       if (user?._id) {
-        const data = await getUserBookings(user._id);
+        const data =
+          await getUserBookings(user._id);
+
         setUserBookings(data);
       }
     }
+
     fetchBookings();
   }, []);
 
   // 🔍 Find booking for listing
-  const getBookingForListing = (listingId) => {
-    return userBookings.find((b) => b.listing?._id === listingId);
+  const getBookingForListing = (
+    listingId
+  ) => {
+    return userBookings.find(
+      (b) => b.listing?._id === listingId
+    );
   };
 
   // 🔍 SEARCH
   const handleSearch = async () => {
     try {
-      const data = await searchListings({
-        minPrice: minPrice ? Number(minPrice) : undefined,
-        maxPrice: maxPrice ? Number(maxPrice) : undefined,
-        minCapacity: minCapacity ? Number(minCapacity) : undefined,
-        lat: userLocation?.lat,
-        lng: userLocation?.lng,
-      });
+      const data =
+        await searchListings({
+          minPrice: minPrice
+            ? Number(minPrice)
+            : undefined,
 
-      setResults(Array.isArray(data) ? data : []);
+          maxPrice: maxPrice
+            ? Number(maxPrice)
+            : undefined,
+
+          minCapacity: minCapacity
+            ? Number(minCapacity)
+            : undefined,
+
+          lat: userLocation?.lat,
+          lng: userLocation?.lng,
+        });
+
+      // ⭐ RATINGS + DEMAND
+      const ratingsData = {};
+      const demandInfo = {};
+
+      for (const listing of data) {
+        const reviews =
+          await getListingReviews(
+            listing._id
+          );
+
+        const avg =
+          reviews.length > 0
+            ? (
+                reviews.reduce(
+                  (sum, r) =>
+                    sum + r.rating,
+                  0
+                ) / reviews.length
+              ).toFixed(1)
+            : 0;
+
+        ratingsData[listing._id] = {
+          average: avg,
+          count: reviews.length,
+        };
+
+        // 🤖 AI SCORE
+        const demandScore =
+          Number(avg) * 2 +
+          reviews.length;
+
+        demandInfo[listing._id] =
+          demandScore;
+      }
+
+      setRatings(ratingsData);
+      setDemandData(demandInfo);
+
+      setResults(
+        Array.isArray(data) ? data : []
+      );
+
     } catch (err) {
       console.error(err);
+
       setResults([]);
     }
   };
@@ -76,7 +174,10 @@ export default function FindWarehouse() {
           lng: pos.coords.longitude,
         });
       },
-      () => alert("Location access denied")
+      () =>
+        alert(
+          "Location access denied"
+        )
     );
   };
 
@@ -92,178 +193,392 @@ export default function FindWarehouse() {
           )
         : null;
 
-      return { ...item, distance };
+      return {
+        ...item,
+        distance,
+      };
     })
-    .filter((item) => item.distance !== null && item.distance <= radius)
-    .sort((a, b) => a.distance - b.distance);
+
+    .filter(
+      (item) =>
+        item.distance !== null &&
+        item.distance <= radius
+    )
+
+    // 🤖 SORT BY AI SCORE
+    .sort(
+      (a, b) =>
+        (demandData[b._id] || 0) -
+        (demandData[a._id] || 0)
+    );
 
   return (
-    <div>
-      <section className="page active">
-        <h2>🔍 Find Warehouse</h2>
+    <section className="page find-page">
 
-        <button onClick={getLocation}>📍 Use My Location</button>
+      {/* HEADER */}
+      <div className="dashboard-header">
+        <h2>
+          🔍 Smart Warehouse Finder
+        </h2>
 
-        {/* 🔧 FILTERS */}
-        <input
-          placeholder="Radius (km)"
-          value={radius}
-          onChange={(e) => setRadius(Number(e.target.value))}
-        />
+        <p>
+          AI-powered warehouse
+          recommendations based on
+          ratings and demand
+        </p>
+      </div>
 
-        <input
-          placeholder="Min Price"
-          onChange={(e) => setMinPrice(e.target.value)}
-        />
+      {/* FILTERS */}
+      <div className="card filter-card">
 
-        <input
-          placeholder="Max Price"
-          onChange={(e) => setMaxPrice(e.target.value)}
-        />
+        <div className="filter-row">
 
-        <input
-          placeholder="Min Capacity"
-          onChange={(e) => setMinCapacity(e.target.value)}
-        />
+          <input
+            placeholder="Radius (km)"
+            value={radius}
+            onChange={(e) =>
+              setRadius(
+                Number(e.target.value)
+              )
+            }
+          />
 
-        <button onClick={handleSearch} disabled={!userLocation}>
-          Search
-        </button>
+          <input
+            placeholder="Min Price"
+            onChange={(e) =>
+              setMinPrice(
+                e.target.value
+              )
+            }
+          />
 
-        <hr />
+          <input
+            placeholder="Max Price"
+            onChange={(e) =>
+              setMaxPrice(
+                e.target.value
+              )
+            }
+          />
 
-        {/* 📢 STATUS */}
-        {results.length === 0 ? (
-          <p>No results found</p>
-        ) : processedResults.length === 0 ? (
-          <p>No warehouses within radius</p>
-        ) : null}
+          <input
+            placeholder="Min Capacity"
+            onChange={(e) =>
+              setMinCapacity(
+                e.target.value
+              )
+            }
+          />
+        </div>
 
-        {/* 📦 LISTINGS */}
-        {processedResults.map((item, index) => {
-          const booking = getBookingForListing(item._id);
+        <div className="filter-actions">
 
-          return (
-            <div key={item._id} className="card">
-              {index === 0 && (
-                <p style={{ color: "green", fontWeight: "bold" }}>
-                  ⭐ Best Match
-                </p>
-              )}
+          <button
+            onClick={getLocation}
+          >
+            📍 Use My Location
+          </button>
 
-              <h3>{item.title}</h3>
-              <p>₹{item.price}</p>
-              <p>Capacity: {item.capacity}</p>
-              <p>📍 {item.distance.toFixed(2)} km away</p>
+          <button
+            onClick={handleSearch}
+            disabled={!userLocation}
+          >
+            🔍 Search Warehouses
+          </button>
 
-              {/* 📦 BOOKING STATUS LOGIC */}
+        </div>
+      </div>
 
-              {!booking && (
-                <button
-                  onClick={async () => {
-                    await createBooking(
-                      item._id,
-                      user._id,
-                      "2026-04-25",
-                      "2026-04-28"
-                    );
+      {/* EMPTY STATES */}
+      {results.length === 0 ? (
+        <p className="empty-state">
+          No results found
+        </p>
+      ) : processedResults.length === 0 ? (
+        <p className="empty-state">
+          No warehouses within radius
+        </p>
+      ) : null}
 
-                    const updated = await getUserBookings(user._id);
-                    setUserBookings(updated);
+      {/* LISTINGS */}
+      <div className="results-grid">
 
-                    alert("Request sent!");
-                  }}
-                >
-                  📦 Request Booking
-                </button>
-              )}
+        {processedResults.map(
+          (item, index) => {
+            const booking =
+              getBookingForListing(
+                item._id
+              );
 
-              {booking?.status === "pending" && (
-                <button disabled>⏳ Pending</button>
-              )}
+            return (
+              <div
+                key={item._id}
+                className="card warehouse-card"
+              >
 
-              {booking?.status === "accepted" && (
-                <button disabled style={{ background: "orange" }}>
-                  ✅ Accepted
-                </button>
-              )}
+                {/* 🤖 BEST MATCH */}
+                {index === 0 && (
+                  <div className="best-match">
+                    🤖 AI Recommended
+                  </div>
+                )}
 
-              {booking?.status === "confirmed" && (
-                <button disabled style={{ background: "green" }}>
-                  📦 In Use
-                </button>
-              )}
+                {/* 🔥 HIGH DEMAND */}
+                {index < 2 && (
+                  <div className="demand-badge">
+                    🔥 High Demand
+                  </div>
+                )}
 
-              {booking?.status === "completed" && (
-                <button disabled>✔ Completed</button>
-              )}
+                {/* IMAGE */}
+                {item.images?.[0] && (
+                  <img
+                    src={item.images[0]}
+                    alt="warehouse"
+                    className="warehouse-image"
+                  />
+                )}
 
-              {booking?.status === "rejected" && (
-                <button
-                  style={{ background: "red" }}
-                  onClick={async () => {
-                    await createBooking(
-                      item._id,
-                      user._id,
-                      "2026-04-25",
-                      "2026-04-28"
-                    );
+                {/* CONTENT */}
+                <div className="warehouse-content">
 
-                    const updated = await getUserBookings(user._id);
-                    setUserBookings(updated);
-                  }}
-                >
-                  🔁 Retry Booking
-                </button>
-              )}
+                  <h3>
+                    {item.title}
+                  </h3>
 
-              {/* 🖼️ IMAGE */}
-              {item.images?.[0] && (
-                <img
-                  src={item.images[0]}
-                  alt="warehouse"
-                  style={{
-                    width: "100%",
-                    height: "150px",
-                    objectFit: "cover",
-                    marginTop: "10px",
-                  }}
-                />
-              )}
-            </div>
-          );
-        })}
-      </section>
+                  {/* ⭐ RATINGS */}
+                  <div className="listing-rating">
+                    {ratings[item._id]
+                      ?.average ? (
+                      <>
+                        ⭐{" "}
+                        {
+                          ratings[
+                            item._id
+                          ].average
+                        }
+
+                        <span>
+                          {" "}
+                          (
+                          {
+                            ratings[
+                              item._id
+                            ].count
+                          }{" "}
+                          reviews)
+                        </span>
+                      </>
+                    ) : (
+                      "No reviews yet"
+                    )}
+                  </div>
+
+                  <p>
+                    💰 ₹{item.price}
+                  </p>
+
+                  <p>
+                    📦 Capacity:{" "}
+                    {item.capacity}
+                  </p>
+
+                  <p>
+                    📍{" "}
+                    {item.distance.toFixed(
+                      2
+                    )}{" "}
+                    km away
+                  </p>
+
+                  {/* STATUS BUTTONS */}
+
+                  {!booking && (
+                    <button
+                      className="booking-btn"
+                      onClick={async () => {
+                        await createBooking(
+                          item._id,
+                          user._id,
+                          "2026-04-25",
+                          "2026-04-28"
+                        );
+
+                        const updated =
+                          await getUserBookings(
+                            user._id
+                          );
+
+                        setUserBookings(
+                          updated
+                        );
+
+                        alert(
+                          "Request sent!"
+                        );
+                      }}
+                    >
+                      📦 Request Booking
+                    </button>
+                  )}
+
+                  {booking?.status ===
+                    "pending" && (
+                    <button
+                      disabled
+                      className="pending-btn"
+                    >
+                      ⏳ Pending
+                    </button>
+                  )}
+
+                  {booking?.status ===
+                    "accepted" && (
+                    <button
+                      disabled
+                      className="accepted-btn"
+                    >
+                      ✅ Accepted
+                    </button>
+                  )}
+
+                  {booking?.status ===
+                    "confirmed" && (
+                    <button
+                      disabled
+                      className="confirmed-btn"
+                    >
+                      📦 In Use
+                    </button>
+                  )}
+
+                  {booking?.status === "completed" && (
+                    <button
+                      className="booking-btn"
+                      onClick={async () => {
+                        await createBooking(
+                          item._id,
+                          user._id,
+                          "2026-04-25",
+                          "2026-04-28"
+                        );
+                      
+                        const updated =
+                          await getUserBookings(
+                            user._id
+                          );
+                        
+                        setUserBookings(updated);
+                        
+                        alert("New request sent!");
+                      }}
+                    >
+                      🔁 Book Again
+                    </button>
+                  )}
+
+                  {booking?.status ===
+                    "rejected" && (
+                    <button
+                      className="rejected-btn"
+                      onClick={async () => {
+                        await createBooking(
+                          item._id,
+                          user._id,
+                          "2026-04-25",
+                          "2026-04-28"
+                        );
+
+                        const updated =
+                          await getUserBookings(
+                            user._id
+                          );
+
+                        setUserBookings(
+                          updated
+                        );
+                      }}
+                    >
+                      🔁 Retry Booking
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          }
+        )}
+      </div>
 
       {/* 🗺️ MAP */}
       {userLocation && (
-        <MapContainer
-          center={[userLocation.lat, userLocation.lng]}
-          zoom={13}
-          style={{ height: "400px", marginTop: "20px" }}
-        >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <div className="map-container">
 
-          {/* 👤 USER */}
-          <Marker position={[userLocation.lat, userLocation.lng]}>
-            <Popup>You are here</Popup>
-          </Marker>
+          <MapContainer
+            center={[
+              userLocation.lat,
+              userLocation.lng,
+            ]}
+            zoom={13}
+            style={{
+              height: "450px",
+              width: "100%",
+            }}
+          >
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-          {/* 📍 LISTINGS */}
-          {processedResults.map((item) => (
+            {/* 👤 USER */}
             <Marker
-              key={item._id}
-              position={[item.location.lat, item.location.lng]}
+              position={[
+                userLocation.lat,
+                userLocation.lng,
+              ]}
             >
               <Popup>
-                {item.title} <br />
-                ₹{item.price} <br />
-                📍 {item.distance.toFixed(2)} km
+                You are here
               </Popup>
             </Marker>
-          ))}
-        </MapContainer>
+
+            {/* 📍 LISTINGS */}
+            {processedResults.map(
+              (item) => (
+                <Marker
+                  key={item._id}
+                  position={[
+                    item.location.lat,
+                    item.location.lng,
+                  ]}
+                >
+                  <Popup>
+                    <strong>
+                      {item.title}
+                    </strong>
+
+                    <br />
+
+                    ⭐{" "}
+                    {
+                      ratings[item._id]
+                        ?.average
+                    }
+
+                    <br />
+
+                    ₹{item.price}
+
+                    <br />
+
+                    📍{" "}
+                    {item.distance.toFixed(
+                      2
+                    )}{" "}
+                    km
+                  </Popup>
+                </Marker>
+              )
+            )}
+          </MapContainer>
+        </div>
       )}
-    </div>
+    </section>
   );
 }

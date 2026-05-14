@@ -55,6 +55,7 @@ export const createBooking = async (
   return res.json();
 };
 
+
 export const getOwnerListings = async (ownerId) => {
   const res = await fetch(`http://localhost:5000/api/listings?owner=${ownerId}`);
   return res.json();
@@ -113,14 +114,33 @@ export const confirmBooking = async (id) => {
   return res.json();
 };
 
-export const markPaid = async (id) => {
-  const res = await fetch(`http://localhost:5000/api/bookings/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      paymentStatus: "paid",
-      status: "completed",
-    }),
+export const markPaid = async (bookingId) => {
+  const res = await fetch(
+    `http://localhost:5000/api/bookings/${bookingId}/pay`,
+    {
+      method: "PUT",
+    }
+  );
+
+  return res.json();
+};
+
+export const createReview = async (data) => {
+  const res = await fetch("http://localhost:5000/api/reviews/create", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
   });
+
+  return res.json();
+};
+
+export const getListingReviews = async (listingId) => {
+  const res = await fetch(
+    `http://localhost:5000/api/reviews/listing/${listingId}`
+  );
+
   return res.json();
 };

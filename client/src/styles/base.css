@@ -1,0 +1,88 @@
+/* ================= ROOT THEME ================= */
+
+:root {
+  --primary: #14b8a6;
+  --secondary: #0f766e;
+  --accent: #5eead4;
+
+  --bg-dark: #07111a;
+  --bg-light: #0f172a;
+
+  --surface: rgba(255,255,255,0.08);
+  --surface-border: rgba(255,255,255,0.12);
+
+  --text-main: #f8fafc;
+  --text-light: #94a3b8;
+
+  --radius: 22px;
+  --transition: 0.35s ease;
+
+  --shadow:
+    0 8px 32px rgba(0,0,0,0.45);
+
+  --glow:
+    0 0 40px rgba(20,184,166,0.15);
+}
+
+/* ================= RESET ================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: 17px;
+  color: var(--text-main);
+
+  background:
+    radial-gradient(circle at top left, rgba(20,184,166,0.12), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(94,234,212,0.08), transparent 30%),
+    linear-gradient(135deg, #020617 0%, #07111a 40%, #0f172a 100%);
+}
+
+/* ambient glow */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(20,184,166,0.08), transparent 25%),
+    radial-gradient(circle at 80% 80%, rgba(94,234,212,0.06), transparent 25%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ================= TYPO ================= */
+
+h1, h2, h3, h4 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 2.4rem;
+  margin-bottom: 24px;
+}
+
+h3 {
+  font-size: 1.4rem;
+}
+
+p {
+  color: var(--text-light);
+  line-height: 1.7;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}

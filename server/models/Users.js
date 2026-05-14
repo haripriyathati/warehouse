@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema({
     enum: ["kirana", "ecom"],
     required: true,
   },
+  phone: {
+    type: String,
+    required: true,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", userSchema);

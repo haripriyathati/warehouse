@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getUserBookings, confirmBooking } from "../services/api";
+import { getUserBookings, confirmBooking, createReview } from "../services/api";
 import jsPDF from "jspdf";
 
 export default function EcomBookings() {
@@ -7,6 +7,7 @@ export default function EcomBookings() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [hasViewedAgreement, setHasViewedAgreement] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [reviewForm, setReviewForm] = useState({});
 
   const user = JSON.parse(localStorage.getItem("user") || "null");
 
@@ -79,9 +80,14 @@ export default function EcomBookings() {
             {/* ✅ ACCEPTED MESSAGE */}
             {b.status === "accepted" && (
               <>
-                <p style={{ color: "green" }}>
-                  ✅ Your request was accepted!
-                </p>
+                <div style={{ marginTop: "10px" }}>
+                  <p style={{ color: "green" }}>
+                    ✅ Your request was accepted!
+                  </p>
+
+                  <p>📞 Kirana Contact:</p>
+                  <p>{b.listing?.owner?.phone}</p>
+                </div>
 
                 <button
                   onClick={() => {
@@ -145,6 +151,66 @@ export default function EcomBookings() {
                                 
               </div>
             )}
+            {b.status === "completed" && (
+              <div className="card" style={{ marginTop: "10px" }}>
+                <h4>⭐ Leave Review</h4>
+                <input
+                  type="number"
+                  min="1"
+                  max="5"
+                  placeholder="Rating (1-5)"
+                  value={reviewForm[b._id]?.rating || ""}
+                  onChange={(e) =>
+                    setReviewForm({
+                      ...reviewForm,
+                      [b._id]: {
+                        ...reviewForm[b._id],
+                        rating: e.target.value,
+                      },
+                    })
+                  }
+                />
+                <textarea
+                  placeholder="Write review..."
+                  value={reviewForm[b._id]?.comment || ""}
+                  onChange={(e) =>
+                    setReviewForm({
+                      ...reviewForm,
+                      [b._id]: {
+                        ...reviewForm[b._id],
+                        comment: e.target.value,
+                      },
+                    })
+                  }
+                />
+
+                <button
+                  onClick={async () => {
+                    await createReview({
+                      booking: b._id,
+                      listing: b.listing._id,
+                      user: user._id,
+                      rating: reviewForm[b._id]?.rating,
+                      comment: reviewForm[b._id]?.comment,
+                    });
+                  
+                    alert("Review submitted!");
+                  
+                    // ✅ clear form
+                    setReviewForm({
+                      ...reviewForm,
+                      [b._id]: null,
+                    });
+                  
+                    // ✅ refresh bookings
+                    fetchData();
+                  }}
+                >
+                  ⭐ Submit Review
+                </button>
+              </div>
+            )}
+
           </div>
         ))
       )}
